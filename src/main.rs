@@ -56,6 +56,7 @@ impl<const N: usize> Screen<N> {
 
 enum Modes {
     Distance,
+    Meow,
 }
 
 impl Modes {
@@ -72,12 +73,17 @@ impl Modes {
                     value: distance as f64,
                 }
             }
+            Modes::Meow => Screen {
+                title: String::from_str("meow").unwrap(),
+                value: 3.,
+            },
         }
     }
 
     fn next(&self) -> Self {
         match self {
-            Modes::Distance => Modes::Distance,
+            Modes::Distance => Modes::Meow,
+            Modes::Meow => Modes::Distance,
         }
     }
 }
