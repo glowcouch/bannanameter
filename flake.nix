@@ -22,7 +22,7 @@
         };
         rust-toolchain = fenix.packages.${system}.fromToolchainFile {
           file = ./rust-toolchain.toml;
-          sha256 = "sha256-JuyNmA7iixvGBDN+0DpivQofDODFrd2qh+kE4B3X3I8=";
+          sha256 = "sha256-Z8PetnKGSZjqRtodJ20XqBoTe2qNG0RaklrVW7AQ3JE=";
         };
 
         # helper function to merge a bunch of attrsets recursively
