@@ -29,9 +29,11 @@ bind_interrupts!(struct Irqs {
     I2C1_IRQ => embassy_rp::i2c::InterruptHandler<embassy_rp::peripherals::I2C1>;
 });
 
-struct Device<A, B, C, I: embedded_hal::i2c::I2c> {
+struct Device<'a, A, B, C, I: embedded_hal::i2c::I2c> {
     distance: Hcsr04<A, B, C>,
     motion: Mpu6050<I>,
+    #[allow(dead_code, reason = "for debugging")]
+    led: Output<'a>,
 }
 
 struct Screen<const N: usize> {
@@ -67,9 +69,9 @@ enum Modes {
 }
 
 impl Modes {
-    async fn render<A: OutputPin, B: InputPin + Wait, C: DelayNs, I: embedded_hal::i2c::I2c>(
+    async fn render<'a, A: OutputPin, B: InputPin + Wait, C: DelayNs, I: embedded_hal::i2c::I2c>(
         &self,
-        device: &mut Device<A, B, C, I>,
+        device: &mut Device<'a, A, B, C, I>,
     ) -> Screen<16> {
         match self {
             Modes::Distance => {
@@ -130,6 +132,8 @@ impl Modes {
 async fn main(_spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
 
+    let led = Output::new(p.PIN_25, Level::Low);
+
     let trig = Output::new(p.PIN_0, Level::Low);
     let echo = Input::new(p.PIN_1, Pull::None);
 
@@ -149,6 +153,7 @@ async fn main(_spawner: Spawner) {
     let mut device = Device {
         distance: hcsr04,
         motion: mpu6050,
+        led,
     };
 
     let sda = p.PIN_8;
