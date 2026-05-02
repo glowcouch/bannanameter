@@ -14,8 +14,8 @@ cavendish/mazano(speed): 4.39815e-7 m/s
 
 cavendish/mazano^2 or bforce(acceleration): 1.01809e-12 m/s²
 
-It is reccomended that you use kilocavendishpermazano and terrabforce for regular measurements, which is what the bannanameter does:
+It is reccomended that you use kilocavendishpermazano and zetabforce for regular measurements, which is what the bannanameter does:
 
 kilocavendishpermazano(length): 0.439815 m/s
 
-terrabforce(acceleration): 1.01809 m/s²
+zetabforce(acceleration): 1.01809e+6 m/s²
