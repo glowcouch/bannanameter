@@ -39,12 +39,15 @@ async fn main(_spawner: Spawner) {
         .temperature(NoTemperatureCompensation)
         .build();
 
-    let sda = p.PIN_4;
-    let scl = p.PIN_5;
+    let sda = p.PIN_8;
+    let scl = p.PIN_9;
 
     let i2c = I2c::new_async(p.I2C0, scl, sda, Irqs, Config::default());
-    let mut lcd = HD44780::new_i2c(i2c, 0x27, &mut embassy_time::Delay).unwrap();
+    let mut lcd = HD44780::new_i2c(i2c, 0x3F, &mut embassy_time::Delay).unwrap();
 
+    lcd.clear(&mut embassy_time::Delay).unwrap();
+    lcd.reset(&mut embassy_time::Delay).unwrap();
+    lcd.set_cursor_pos(0x40, &mut embassy_time::Delay).unwrap();
     lcd.write_str("hello", &mut embassy_time::Delay).unwrap();
 
     loop {
