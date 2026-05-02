@@ -32,8 +32,6 @@ bind_interrupts!(struct Irqs {
 struct Device<A, B, C, I: embedded_hal::i2c::I2c> {
     distance: Hcsr04<A, B, C>,
     motion: Mpu6050<I>,
-    accel_calibration: Accel,
-    gyro_calibration: Gyro,
 }
 
 struct Screen<const N: usize> {
@@ -95,13 +93,22 @@ impl Modes {
                 }
             }
             Modes::Acceleration => {
-                let accel = device.motion.accel().unwrap();
-                let magnitude =
-                    libm::sqrt((accel.x().pow(2) + accel.y().pow(2) + accel.z().pow(2)) as f64);
+                if let Ok(accel) = device.motion.accel() {
+                    let magnitude = libm::sqrt(
+                        libm::pow(accel.x() as f64, 2.)
+                            + libm::pow(accel.y() as f64, 2.)
+                            + libm::pow(accel.z() as f64, 2.),
+                    );
 
-                Screen {
-                    title: String::from_str("acceleration").unwrap(),
-                    value: magnitude,
+                    Screen {
+                        title: String::from_str("accel").unwrap(),
+                        value: magnitude,
+                    }
+                } else {
+                    Screen {
+                        title: String::from_str("accel err").unwrap(),
+                        value: 0.,
+                    }
                 }
             }
         }
@@ -137,22 +144,9 @@ async fn main(_spawner: Spawner) {
     let i2c = I2c::new_async(p.I2C1, scl, sda, Irqs, Config::default());
     let mut mpu6050 = Mpu6050::new(i2c, Address::default()).unwrap();
 
-    let (accel_calibration, gyro_calibration) = mpu6050
-        .calibrate(
-            &mut embassy_time::Delay,
-            &CalibrationParameters::new(
-                mpu6050_dmp::accel::AccelFullScale::G2,
-                mpu6050_dmp::gyro::GyroFullScale::Deg2000,
-                mpu6050_dmp::calibration::ReferenceGravity::ZN,
-            ),
-        )
-        .unwrap();
-
     let mut device = Device {
         distance: hcsr04,
         motion: mpu6050,
-        accel_calibration,
-        gyro_calibration,
     };
 
     let sda = p.PIN_8;
