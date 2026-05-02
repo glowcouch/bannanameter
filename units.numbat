@@ -3,7 +3,9 @@ unit mazano: Time = 5 days
 unit plantain: Mass = 118 gram
 
 unit kilocavendishpermazano: Velocity = 1000000 cavendish / mazano
+
 unit bforce: Acceleration = cavendish / mazano^2
+unit gigabforce: Acceleration = bforce * 1000000000
 
 # accelerometer units
 unit accelerometer: Acceleration = (158500 / 9.8) m * s^-2
