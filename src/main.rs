@@ -5,7 +5,7 @@
 #![no_std]
 #![no_main]
 
-use defmt::*;
+use core::fmt::Write;
 use embassy_executor::Spawner;
 use embassy_rp::{
     bind_interrupts,
@@ -13,10 +13,10 @@ use embassy_rp::{
     i2c::{Config, I2c},
 };
 use embassy_time::{Delay, Timer};
-use embedded_hal_bus::i2c::RefCellDevice;
 use gpio::{Level, Output};
 use hcsr04::{Hcsr04, NoTemperatureCompensation};
 use hd44780_driver::HD44780;
+use heapless::String;
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
@@ -45,19 +45,17 @@ async fn main(_spawner: Spawner) {
     let i2c = I2c::new_async(p.I2C0, scl, sda, Irqs, Config::default());
     let mut lcd = HD44780::new_i2c(i2c, 0x3F, &mut embassy_time::Delay).unwrap();
 
-    lcd.clear(&mut embassy_time::Delay).unwrap();
-    lcd.reset(&mut embassy_time::Delay).unwrap();
-    lcd.set_cursor_pos(0x40, &mut embassy_time::Delay).unwrap();
-    lcd.write_str("hello", &mut embassy_time::Delay).unwrap();
-
     loop {
-        let dist = hcsr04.measure_distance().await.unwrap();
+        let dist = hcsr04.measure_distance().await.unwrap() as i64;
 
-        if dist > 10. {
-            led.set_low();
-        } else {
-            led.set_high();
-        }
+        let mut string: String<32> = String::new();
+
+        write!(&mut string, "{}", dist).unwrap();
+
+        lcd.clear(&mut embassy_time::Delay).unwrap();
+        lcd.reset(&mut embassy_time::Delay).unwrap();
+        lcd.set_cursor_pos(0x40, &mut embassy_time::Delay).unwrap();
+        lcd.write_str(&string, &mut embassy_time::Delay).unwrap();
 
         Timer::after_millis(10).await;
     }

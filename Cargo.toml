@@ -34,7 +34,9 @@ defmt = "1"
 hcsr04 = "0.1.3"
 hd44780-driver = "0.4.0"
 
-# cargo build/run
+heapless = "0.9.3"
+
+# cargo build/run# utils
 [profile.dev]
 codegen-units = 1
 debug = 2
