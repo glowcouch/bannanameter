@@ -19,7 +19,7 @@ use gpio::{Level, Output};
 use hcsr04::{Hcsr04, NoTemperatureCompensation};
 use hd44780_driver::{bus::DataBus, HD44780};
 use heapless::String;
-use mpu6050_dmp::{address::Address, sensor::Mpu6050};
+use mpu6050_dmp::{address::Address, calibration::CalibrationParameters, sensor::Mpu6050};
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
@@ -119,7 +119,18 @@ async fn main(_spawner: Spawner) {
     let scl = p.PIN_7;
 
     let i2c = I2c::new_async(p.I2C1, scl, sda, Irqs, Config::default());
-    let mpu6050 = Mpu6050::new(i2c, Address::default()).unwrap();
+    let mut mpu6050 = Mpu6050::new(i2c, Address::default()).unwrap();
+
+    mpu6050
+        .calibrate(
+            &mut embassy_time::Delay,
+            &CalibrationParameters::new(
+                mpu6050_dmp::accel::AccelFullScale::G2,
+                mpu6050_dmp::gyro::GyroFullScale::Deg2000,
+                mpu6050_dmp::calibration::ReferenceGravity::ZN,
+            ),
+        )
+        .unwrap();
 
     let mut device = Device {
         distance: hcsr04,
