@@ -19,7 +19,9 @@ use gpio::{Level, Output};
 use hcsr04::{Hcsr04, NoTemperatureCompensation};
 use hd44780_driver::{bus::DataBus, HD44780};
 use heapless::String;
-use mpu6050_dmp::{address::Address, calibration::CalibrationParameters, sensor::Mpu6050};
+use mpu6050_dmp::{
+    accel::Accel, address::Address, calibration::CalibrationParameters, gyro::Gyro, sensor::Mpu6050,
+};
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
@@ -30,6 +32,8 @@ bind_interrupts!(struct Irqs {
 struct Device<A, B, C, I: embedded_hal::i2c::I2c> {
     distance: Hcsr04<A, B, C>,
     motion: Mpu6050<I>,
+    accel_calibration: Accel,
+    gyro_calibration: Gyro,
 }
 
 struct Screen<const N: usize> {
@@ -60,6 +64,7 @@ impl<const N: usize> Screen<N> {
 enum Modes {
     Distance,
     Temperature,
+    Acceleration,
     Meow,
 }
 
@@ -89,6 +94,16 @@ impl Modes {
                     value: temp.celsius() as f64,
                 }
             }
+            Modes::Acceleration => {
+                let accel = device.motion.accel().unwrap();
+                let magnitude =
+                    libm::sqrt((accel.x().pow(2) + accel.y().pow(2) + accel.z().pow(2)) as f64);
+
+                Screen {
+                    title: String::from_str("acceleration").unwrap(),
+                    value: magnitude,
+                }
+            }
         }
     }
 
@@ -96,7 +111,8 @@ impl Modes {
         match self {
             Modes::Distance => Modes::Meow,
             Modes::Meow => Modes::Temperature,
-            Modes::Temperature => Modes::Distance,
+            Modes::Temperature => Modes::Acceleration,
+            Modes::Acceleration => Modes::Distance,
         }
     }
 }
@@ -121,7 +137,7 @@ async fn main(_spawner: Spawner) {
     let i2c = I2c::new_async(p.I2C1, scl, sda, Irqs, Config::default());
     let mut mpu6050 = Mpu6050::new(i2c, Address::default()).unwrap();
 
-    mpu6050
+    let (accel_calibration, gyro_calibration) = mpu6050
         .calibrate(
             &mut embassy_time::Delay,
             &CalibrationParameters::new(
@@ -135,6 +151,8 @@ async fn main(_spawner: Spawner) {
     let mut device = Device {
         distance: hcsr04,
         motion: mpu6050,
+        accel_calibration,
+        gyro_calibration,
     };
 
     let sda = p.PIN_8;

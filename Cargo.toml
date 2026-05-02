@@ -38,6 +38,7 @@ hd44780-driver = "0.4.0"
 mpu6050-dmp = "0.6.1"
 
 heapless = "0.9.3"
+libm = "0.2.16"
 
 # cargo build/run# utils
 [profile.dev]
