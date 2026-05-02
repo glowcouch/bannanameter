@@ -36,17 +36,19 @@ struct Screen<const N: usize> {
 
 impl<const N: usize> Screen<N> {
     fn draw<B: DataBus>(&self, lcd: &mut HD44780<B>) {
-        lcd.clear(&mut embassy_time::Delay).unwrap();
         lcd.reset(&mut embassy_time::Delay).unwrap();
 
-        lcd.set_cursor_pos(0x40, &mut embassy_time::Delay).unwrap();
-        lcd.write_str(&self.title, &mut embassy_time::Delay)
+        let mut title_string: String<16> = String::new();
+        let _ = write!(&mut title_string, "{:<16}", self.title); // ignore errors here
+
+        lcd.set_cursor_pos(0x00, &mut embassy_time::Delay).unwrap();
+        lcd.write_str(&title_string, &mut embassy_time::Delay)
             .unwrap();
 
         let mut value_string: String<16> = String::new();
-        let _ = write!(&mut value_string, "{:.3}", self.value); // ignore errors here
+        let _ = write!(&mut value_string, "{:<16.3}", self.value); // ignore errors here
 
-        lcd.set_cursor_pos(0x00, &mut embassy_time::Delay).unwrap();
+        lcd.set_cursor_pos(0x40, &mut embassy_time::Delay).unwrap();
         lcd.write_str(&value_string, &mut embassy_time::Delay)
             .unwrap();
     }
@@ -116,6 +118,6 @@ async fn main(_spawner: Spawner) {
         }
         mode_switch_was_high = mode_switch.is_high();
 
-        Timer::after_millis(10).await;
+        Timer::after_millis(100).await;
     }
 }
