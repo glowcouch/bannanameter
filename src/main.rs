@@ -7,11 +7,21 @@
 
 use defmt::*;
 use embassy_executor::Spawner;
-use embassy_rp::gpio::{self, Input, Pull};
+use embassy_rp::{
+    bind_interrupts,
+    gpio::{self, Input, Pull},
+    i2c::{Config, I2c},
+};
 use embassy_time::{Delay, Timer};
+use embedded_hal_bus::i2c::RefCellDevice;
 use gpio::{Level, Output};
 use hcsr04::{Hcsr04, NoTemperatureCompensation};
+use hd44780_driver::HD44780;
 use {defmt_rtt as _, panic_probe as _};
+
+bind_interrupts!(struct Irqs {
+    I2C0_IRQ => embassy_rp::i2c::InterruptHandler<embassy_rp::peripherals::I2C0>;
+});
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
@@ -29,7 +39,13 @@ async fn main(_spawner: Spawner) {
         .temperature(NoTemperatureCompensation)
         .build();
 
-    led.set_high();
+    let sda = p.PIN_4;
+    let scl = p.PIN_5;
+
+    let i2c = I2c::new_async(p.I2C0, scl, sda, Irqs, Config::default());
+    let mut lcd = HD44780::new_i2c(i2c, 0x27, &mut embassy_time::Delay).unwrap();
+
+    lcd.write_str("hello", &mut embassy_time::Delay).unwrap();
 
     loop {
         let dist = hcsr04.measure_distance().await.unwrap();
