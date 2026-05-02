@@ -19,14 +19,17 @@ use gpio::{Level, Output};
 use hcsr04::{Hcsr04, NoTemperatureCompensation};
 use hd44780_driver::{bus::DataBus, HD44780};
 use heapless::String;
+use mpu6050_dmp::{address::Address, sensor::Mpu6050};
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
     I2C0_IRQ => embassy_rp::i2c::InterruptHandler<embassy_rp::peripherals::I2C0>;
+    I2C1_IRQ => embassy_rp::i2c::InterruptHandler<embassy_rp::peripherals::I2C1>;
 });
 
-struct Device<A, B, C> {
+struct Device<A, B, C, I: embedded_hal::i2c::I2c> {
     distance: Hcsr04<A, B, C>,
+    motion: Mpu6050<I>,
 }
 
 struct Screen<const N: usize> {
@@ -56,13 +59,14 @@ impl<const N: usize> Screen<N> {
 
 enum Modes {
     Distance,
+    Temperature,
     Meow,
 }
 
 impl Modes {
-    async fn render<A: OutputPin, B: InputPin + Wait, C: DelayNs>(
+    async fn render<A: OutputPin, B: InputPin + Wait, C: DelayNs, I: embedded_hal::i2c::I2c>(
         &self,
-        device: &mut Device<A, B, C>,
+        device: &mut Device<A, B, C, I>,
     ) -> Screen<16> {
         match self {
             Modes::Distance => {
@@ -77,13 +81,22 @@ impl Modes {
                 title: String::from_str("meow").unwrap(),
                 value: 3.,
             },
+            Modes::Temperature => {
+                let temp = device.motion.temperature().unwrap();
+
+                Screen {
+                    title: String::from_str("temperature").unwrap(),
+                    value: temp.celsius() as f64,
+                }
+            }
         }
     }
 
     fn next(&self) -> Self {
         match self {
             Modes::Distance => Modes::Meow,
-            Modes::Meow => Modes::Distance,
+            Modes::Meow => Modes::Temperature,
+            Modes::Temperature => Modes::Distance,
         }
     }
 }
@@ -102,7 +115,16 @@ async fn main(_spawner: Spawner) {
         .temperature(NoTemperatureCompensation)
         .build();
 
-    let mut device = Device { distance: hcsr04 };
+    let sda = p.PIN_6;
+    let scl = p.PIN_7;
+
+    let i2c = I2c::new_async(p.I2C1, scl, sda, Irqs, Config::default());
+    let mpu6050 = Mpu6050::new(i2c, Address::default()).unwrap();
+
+    let mut device = Device {
+        distance: hcsr04,
+        motion: mpu6050,
+    };
 
     let sda = p.PIN_8;
     let scl = p.PIN_9;
