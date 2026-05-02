@@ -104,7 +104,7 @@ async fn main(_spawner: Spawner) {
     let i2c = I2c::new_async(p.I2C0, scl, sda, Irqs, Config::default());
     let mut lcd = HD44780::new_i2c(i2c, 0x3F, &mut embassy_time::Delay).unwrap();
 
-    let mode_switch = Input::new(p.PIN_3, Pull::Up);
+    let mode_switch = Input::new(p.PIN_14, Pull::Up);
     let mut mode_switch_was_high = false;
 
     let mut mode = Modes::Distance;
