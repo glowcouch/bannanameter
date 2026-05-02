@@ -12,6 +12,10 @@ plaintain: 118 grams
 
 cavendish/mazano(speed): 4.39815e-7 m/s
 
-It is reccomended that you use kilocavendishpermazano for regular measurements, which is what the bannanameter does:
+cavendish/mazano^2 or bforce(acceleration): 1.01809e-12 m/s²
+
+It is reccomended that you use kilocavendishpermazano and terrabforce for regular measurements, which is what the bannanameter does:
 
 kilocavendishpermazano(length): 0.439815 m/s
+
+terrabforce(acceleration): 1.01809 m/s²

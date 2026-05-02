@@ -104,7 +104,7 @@ impl Modes {
                             + libm::pow(accel.z() as f64, 2.),
                     );
 
-                    let bforce = magnitude * 1.58861e+16;
+                    let bforce = magnitude * 1.58861e+16 * 1000000000000.;
 
                     Screen {
                         title: String::from_str("accel").unwrap(),
