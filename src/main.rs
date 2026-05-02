@@ -8,6 +8,7 @@ use bsp::entry;
 use defmt::*;
 use defmt_rtt as _;
 use embedded_hal::digital::OutputPin;
+use hcsr04::{Hcsr04, NoTemperatureCompensation};
 use panic_probe as _;
 
 // Provide an alias for our BSP so we can switch targets quickly.
@@ -16,7 +17,7 @@ use rp_pico as bsp;
 // use sparkfun_pro_micro_rp2040 as bsp;
 
 use bsp::hal::{
-    clocks::{Clock, init_clocks_and_plls},
+    clocks::{init_clocks_and_plls, Clock},
     pac,
     sio::Sio,
     watchdog::Watchdog,
@@ -52,6 +53,16 @@ fn main() -> ! {
         sio.gpio_bank0,
         &mut pac.RESETS,
     );
+
+    // TODO: read from ultrasonic
+    let trig = pins.gpio0.into_push_pull_output();
+    let echo = pins.gpio1.into_pull_up_input();
+    let mut hcsr04 = Hcsr04::builder()
+        .trig(trig)
+        .echo(echo)
+        .delay(Delay)
+        .temperature(NoTemperatureCompensation)
+        .build();
 
     // This is the correct pin on the Raspberry Pico board. On other boards, even if they have an
     // on-board LED, it might need to be changed.
