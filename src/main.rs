@@ -73,11 +73,13 @@ impl Modes {
     ) -> Screen<16> {
         match self {
             Modes::Distance => {
-                let distance = device.distance.measure_distance().await.unwrap();
+                let distance = device.distance.measure_distance().await.unwrap() as f64;
+
+                let cavendish = (distance / 10.) / 190.;
 
                 Screen {
                     title: String::from_str("distance").unwrap(),
-                    value: distance as f64,
+                    value: cavendish,
                 }
             }
             Modes::Meow => Screen {
