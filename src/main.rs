@@ -77,7 +77,8 @@ impl Modes {
             Modes::Distance => {
                 let distance = device.distance.measure_distance().await.unwrap() as f64;
 
-                let cavendish = (distance / 10.) / 190.;
+                // multiplying by 10 compensates for ultrasonic innacuracy
+                let cavendish = distance / 3.; //10. * (distance / 10.) / 190.;
 
                 Screen {
                     title: String::from_str("distance").unwrap(),
